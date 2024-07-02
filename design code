@@ -1,0 +1,63 @@
+#include <SoftwareSerial.h> #include <TinyGPS.h>
+int state = 0; const int pin = 10;
+float gpslat, gpslon; TinyGPS gps;
+SoftwareSerial sgps(SDA, SCL);
+int a; int b; int c; int d; int e;
+char data = 0; #include "DHT.h"
+#define DHTPIN 3
+#define DHTTYPE DHT11 // DHT 11
+DHT dht(DHTPIN, DHTTYPE);
+void setup() { sgps.begin(9600); Serial.begin(9600); pinMode(4,INPUT);//ldr pinMode(5,INPUT);//touch pinMode(6,INPUT);//gas pinMode(7,INPUT);//fire
+pinMode(10,INPUT);//SWITCH dht.begin();
+}
+void loop() { e=digitalRead(10); if (e==1)
+{
+Serial.println("SOLDIER IN EMERGENCY");
+delay(2000);
+Serial.println("ACQURING LOCATION");
+sgps.listen();
+while (sgps.available())
+{
+int c = sgps.read(); if (gps.encode(c))
+{
+gps.f_get_position(&gpslat, &gpslon);
+}
+}
+if (digitalRead(pin) == HIGH && state == 0) { sgps.listen();
+}
+if (digitalRead(pin) == LOW) { state = 0;
+}
+Serial.print(&gpslat, &gpslon);
+delay(100);
+}
+float h = dht.readHumidity(); float t = dht.readTemperature();
+float f = dht.readTemperature(true); if (isnan(h) || isnan(t) || isnan(f)) {
+Serial.println(F("Failed to read from DHT sensor!")); return;
+}
+float hif = dht.computeHeatIndex(f, h);
+float hic = dht.computeHeatIndex(t, h, false);
+a=digitalRead(4);
+b=digitalRead(5);
+c=analogRead(6);
+d=digitalRead(7);
+if (a==1)
+{
+Serial.println("DAY");
+}
+else
+{
+Serial.println("NIGHT");
+}
+//Serial.println(b);
+Serial.print("AIR QUALITY: "); Serial.print(c); Serial.println("ppm");
+if (d==1)
+{
+Serial.println("NO FIRE DETECTED");
+}
+else
+{
+Serial.println("FIRE DETECTED");
+}
+Serial.print(F("Humidity: ")); Serial.print(h); Serial.print(F("%Temperature: ")); Serial.print(t);
+Serial.println(F("C ")); delay(5000);
+}
